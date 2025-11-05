@@ -45,11 +45,14 @@
   <input type="text" id="deposit" value="0"/>
 
   <label>Term (months)</label>
-  <select id="term">
-    <option value="36">36 months (3 years)</option>
-    <option value="48">48 months (4 years)</option>
-    <option value="60">60 months (5 years)</option>
-  </select>
+<select id="term">
+  <option value="36">36 months (3 years)</option>
+  <option value="48">48 months (4 years)</option>
+  <option value="60">60 months (5 years)</option>
+</select>
+
+<label>Rate (p.a.)</label>
+<input type="text" id="rateDisplay" value="6.88%" readonly style="background:#f3f4f6; color:#111827; font-weight:bold;" />
 
   <div class="slider-container">
     <label>Balloon Amount: <span id="balloonValue">0%</span></label>
@@ -68,7 +71,7 @@
 </div>
 
 <script>
-const baseRate = 0.0678;
+const baseRate = 0.0688;
 const highRate = 0.095;
 const minLoanAmount = 20000;
 
@@ -114,6 +117,7 @@ function calculateRepayment() {
   amountInput.value = formatNumber(amount);
   depositInput.value = formatNumber(deposit);
   balloonValue.textContent = Math.round(balloonPercent*100) + '%';
+  document.getElementById('rateDisplay').value = (rate * 100).toFixed(2) + '%';
 }
 
 amountInput.addEventListener('blur', calculateRepayment);
