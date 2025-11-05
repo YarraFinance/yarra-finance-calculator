@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -25,6 +26,7 @@
   h2 { color: #dc2626; text-align: center; padding: 8px; border-radius: 8px; }
   label { display: block; margin-bottom: 4px; color: #4181ff; font-weight: bold; }
   input, select { width: 100%; padding: 8px; margin-bottom: 16px; border: 1px solid #9ca3af; border-radius: 6px; }
+  input[readonly] { background-color: #f3f4f6; color: #111827; font-weight: bold; cursor: default; }
   input[type=range] { accent-color: #4181ff; }
   .note { font-size: 12px; color: #4b5563; margin-bottom: 8px; }
   .result { background: white; padding: 16px; border-radius: 8px; margin-top: 16px; text-align: center; color: #4181ff; }
@@ -45,14 +47,14 @@
   <input type="text" id="deposit" value="0"/>
 
   <label>Term (months)</label>
-<select id="term">
-  <option value="36">36 months (3 years)</option>
-  <option value="48">48 months (4 years)</option>
-  <option value="60">60 months (5 years)</option>
-</select>
+  <select id="term">
+    <option value="36">36 months (3 years)</option>
+    <option value="48">48 months (4 years)</option>
+    <option value="60">60 months (5 years)</option>
+  </select>
 
-<label>Rate (p.a.)</label>
-<input type="text" id="rateDisplay" value="6.88%" readonly style="background:#f3f4f6; color:#111827; font-weight:bold;" />
+  <label>Rate (p.a.)</label>
+  <input type="text" id="rateDisplay" value="6.78%" readonly />
 
   <div class="slider-container">
     <label>Balloon Amount: <span id="balloonValue">0%</span></label>
@@ -71,7 +73,7 @@
 </div>
 
 <script>
-const baseRate = 0.0688;
+const baseRate = 0.0678;
 const highRate = 0.095;
 const minLoanAmount = 20000;
 
@@ -81,6 +83,7 @@ const termSelect = document.getElementById('term');
 const balloonSlider = document.getElementById('balloonSlider');
 const balloonValue = document.getElementById('balloonValue');
 const repaymentDisplay = document.getElementById('repayment');
+const rateDisplay = document.getElementById('rateDisplay');
 
 function getMaxBalloon(term) {
   if (term == 36) return 50;
@@ -89,8 +92,13 @@ function getMaxBalloon(term) {
   return 0;
 }
 
-function formatNumber(num) { return num.toLocaleString(); }
-function parseNumber(str) { return Number(str.replace(/,/g, '')) || 0; }
+function formatNumber(num) {
+  return num.toLocaleString();
+}
+
+function parseNumber(str) {
+  return Number(str.replace(/,/g, '')) || 0;
+}
 
 function updateSliderMax() {
   const term = parseInt(termSelect.value);
@@ -106,6 +114,8 @@ function calculateRepayment() {
   const balloonPercent = parseInt(balloonSlider.value)/100;
 
   const rate = amount < minLoanAmount ? highRate : baseRate;
+  rateDisplay.value = (rate * 100).toFixed(2) + '%';
+
   const months = term;
   const monthlyRate = rate/12;
   const netAmount = amount - deposit;
@@ -117,7 +127,6 @@ function calculateRepayment() {
   amountInput.value = formatNumber(amount);
   depositInput.value = formatNumber(deposit);
   balloonValue.textContent = Math.round(balloonPercent*100) + '%';
-  document.getElementById('rateDisplay').value = (rate * 100).toFixed(2) + '%';
 }
 
 amountInput.addEventListener('blur', calculateRepayment);
@@ -128,15 +137,16 @@ balloonSlider.addEventListener('input', calculateRepayment);
 updateSliderMax();
 calculateRepayment();
 
-// Email auto-populate
+// Email auto-populate with Gmail fallback
 document.getElementById('enquireBtn').addEventListener('click', () => {
   const amount = amountInput.value;
   const deposit = depositInput.value;
   const balloon = balloonSlider.value;
   const term = termSelect.value;
   const repayment = repaymentDisplay.textContent;
+  const rate = rateDisplay.value;
 
-  const subject = encodeURIComponent("New Finance Referral");
+  const subject = "New Finance Referral";
 
   const bodyText = `==================== YARRA FINANCE REFERRAL ==================
 
@@ -144,9 +154,10 @@ Borrowing Amount:       $${amount}
 Deposit Amount:         $${deposit}
 Balloon Amount:         ${balloon}%
 Term:                   ${term} months
+Interest Rate:          ${rate}
 Estimated Repayment:    ${repayment}
 ==============================================================
-*WHICH COMPANY ARE YOU REFFERING THIS CUSTOMER FROM?* [ ____ ]
+*WHICH COMPANY ARE YOU REFERRING THIS CUSTOMER FROM?* [ ____ ]
 ==============================================================
 
 CUSTOMER INFORMATION (Please Fill out as much as you can)
@@ -160,11 +171,18 @@ CUSTOMER INFORMATION (Please Fill out as much as you can)
 *Customer Company ABN: 
 
 Additional Notes:
-
 `;
 
-  const body = encodeURIComponent(bodyText);
-  window.location.href = `mailto:admin@yarrafinance.com?subject=${subject}&body=${body}`;
+  const mailto = `mailto:admin@yarrafinance.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+  const gmailCompose = `https://mail.google.com/mail/?view=cm&fs=1&to=admin@yarrafinance.com&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyText)}`;
+
+  // Try mailto first, fallback to Gmail
+  const opened = window.open(mailto);
+  setTimeout(() => {
+    if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+      window.open(gmailCompose, '_blank');
+    }
+  }, 500);
 });
 </script>
 </body>
